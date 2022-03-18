@@ -5,6 +5,21 @@
 }
 
 .block {
+    margin: 25px;
+    width: 150px;
+    height: 150px;
+    background: green;
+}
+
+.block1 {
+    margin: 25px;
+    width: 150px;
+    height: 150px;
+    background: green;
+}
+
+.block2 {
+    margin: 25px;
     width: 150px;
     height: 150px;
     background: green;
