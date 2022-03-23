@@ -5,8 +5,8 @@ let iMustBecameThree = 0;
 //
 // waiting 1000ms - just chill =)
 new MyPromise(res => window.setTimeout(res, 1000))
-	// loading react - expect resolve promise
-	.myThen(() => {
+// 	// loading react - expect resolve promise
+	.then(() => {
 		iMustBecameThree++;
 
 		const scriptSrc = 'https://unpkg.com/react@17/umd/react.development.js';
@@ -14,33 +14,30 @@ new MyPromise(res => window.setTimeout(res, 1000))
 		script.src = scriptSrc;
 		document.body.append(script);
 
-		return new Promise((res, rej) => {
+		return new MyPromise((res, rej) => {
 			script.onload = res;
 			script.onerror = rej;
 		});
 	})
-// 	// loading script with wrong url - expect to throw
-	// .myThen(() => {
-	// 	iMustBecameThree++;
+	.then(() => { // loading script with wrong url - expect to throw
+		iMustBecameThree++;
 
-	// 	const script = document.createElement('script');
-	// 	script.src = 'жопа';
-	// 	document.body.append(script);
+		const script = document.createElement('script');
+		script.src = 'жопа';
+		document.body.append(script);
 
-	// 	return new Promise((res, rej) => {
-	// 		script.onload = res;
-	// 		script.onerror = rej;
-	// 	});
-	// })
-	// expect this NOT to be called
-	// .myThen(() => {
-	// 	iMustBecameThree++;
-	// 	iAmAlwaysZero = 1;
-	// })
-	// expect this to be called
-	// .catch(() => {
-	// 	iMustBecameThree++;
+		return new MyPromise((res, rej) => {
+			script.onload = res;
+			script.onerror = rej;
+		});
+	})
+	.then(() => { // expect this NOT to be called
+		iMustBecameThree++;
+		iAmAlwaysZero = 1;
+	})
+	.catch(() => { // exptect this to be called
+		iMustBecameThree++;
 
-	// 	console.log('must be 0 =', iAmAlwaysZero);
-	// 	console.log('must be 3 =', iMustBecameThree);
-    // });
+		console.log('must be 0 =', iAmAlwaysZero);
+		console.log('must be 3 =', iMustBecameThree);
+    });

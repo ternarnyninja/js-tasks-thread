@@ -7,152 +7,142 @@ const PromiseState = {
 class MyPromise {
 	constructor(callback) {
 	  this.state = PromiseState.Pending;
-      this.result = undefined;
-      this.queueOnResolve = [];
-      this.queueOnReject = [];
+    this.result = undefined;
+    this.queueOnResolve = [];
+    this.queueOnReject = [];
 
-      const myResolve = (value) => {
-        if (this.state === PromiseState.Pending) {
-          this.state = PromiseState.Resolved;
-          this.result = value;
-          this.queueOnResolve.forEach(callback => callback(value));
-        }
+    const resolve = (value) => {
+      if (this.state === PromiseState.Pending) {
+        this.state = PromiseState.Resolved;
+        this.result = value;
+        console.log(this.queueOnResolve);
+        this.queueOnResolve.forEach(callback => callback(value));
       }
-
-      const myReject = (error) => {
-        if (this.state === PromiseState.Pending) {
-          this.state = PromiseState.Rejected;
-          this.result = error;
-          this.queueOnReject.forEach(callback => callback(error));
-        }
-      }
-
-      try {
-
-        callback(myResolve, myReject)
-      
-      } catch(err) {
-
-        console.log(err);
-        console.log(err.name);
-        console.log(err.message);
-        console.log(err.stack);
-      }
-
-	}
-
-	// hmm...
-    myThen = (thenOnResolve, thenOnReject) => {
-      return new MyPromise((resolve, reject) => {
-        if (this.state === PromiseState.Pending) {
-          this.queueOnResolve.push(() => {
-            try {
-              const fulfilledFromPromise = thenOnResolve(this.result);
-              if (fulfilledFromPromise instanceof MyPromise) {
-                fulfilledFromPromise.myThen(resolve, reject);
-              } else {
-                resolve(fulfilledFromPromise);
-              }
-            } catch (err) {
-              reject(err)
-              console.log(err.name);
-              console.log(err.message);
-              console.log(err.stack);
-              throw err;
-            }
-          });
-          this.queueOnReject.push(() => {
-            try {
-              const rejectedFromPromise = thenOnReject(resolve, reject);
-              if (rejectedFromPromise instanceof MyPromise) {
-                rejectedFromPromise.myThen(resolve, reject);
-              } else {
-                reject(rejectedFromPromise);
-              }
-            } catch (err) {
-                reject(err);
-                console.log(err.name);
-                console.log(err.message);
-                console.log(err.stack);
-              throw err;
-            }
-          });
-        }
-
-        if (this.state === PromiseState.Resolved) {
-          try {
-            const fulfilledFromPromise = thenOnResolve(this.result);
-            if (fulfilledFromPromise instanceof MyPromise) {
-              fulfilledFromPromise.myThen(resolve, reject);
-            } else {
-              resolve(fulfilledFromPromise);
-            }
-          } catch (err) {
-              reject(err);
-              console.log(err.name);
-              console.log(err.message);
-              console.log(err.stack);
-              throw err;
-          }
-        }
-
-        if (this.state === PromiseState.Rejected) {
-          try {
-            const rejectedFromPromise = thenOnReject(this.result);
-            if (rejectedFromPromise instanceof MyPromise) {
-              rejectedFromPromise.myThen(resolve, reject);
-            } else {
-              reject(rejectedFromPromise);
-            }
-          } catch (err) {
-              reject(err);
-              console.log(err.name);
-              console.log(err.message);
-              console.log(err.stack);
-              throw err;
-          }
-        }
-      });
-
     }
 
-	catch = (catchCallback) => {
-		return this.then(undefined, catchCallback || (x => x));
+    const reject = (error) => {
+      if (this.state === PromiseState.Pending) {
+        this.state = PromiseState.Rejected;
+        this.result = error;
+        this.queueOnReject.forEach(callback => callback(error));
+      }
+    }
+
+    try {
+      callback(resolve, reject);
+    } catch(err) {
+      console.log(err);
+    }
+
+  }
+
+	// hmm...
+  then = (onFulfilled, onRejected) => {
+    onFulfilled = typeof onFulfilled ===  "function" ? onFulfilled : value => value;
+    onRejected = typeof onFulfilled ===  "function" ? onRejected : error => {throw error};
+    return new MyPromise((resolve, reject) => {
+      if (this.state === PromiseState.Pending) {
+          this.queueOnResolve.push(() => {
+            try {
+              const newResult = onFulfilled(this.result);
+              if(newResult instanceof MyPromise) {
+                newResult.then(resolve, reject)
+              } else {
+              resolve(newResult);
+              }
+            } catch(err) {
+              reject(err);
+            }
+          });
+          this.queueOnResolve.push(() => {
+            try {
+              const newResult = onRejected(this.result);
+              if(newResult instanceof MyPromise) {
+                newResult.then(resolve, reject)
+              } else {
+              reject(newResult);
+              }
+            } catch(err) {
+              reject(err);
+            }
+          });
+      }
+
+      if (this.state === PromiseState.Resolved) {
+        try {
+          const newResult = onFulfilled(this.result);
+          if(newResult instanceof MyPromise) {
+            newResult.then(resolve, reject)
+          } else {
+          resolve(newResult);
+          }
+        } catch(err) {
+          reject(err);
+        }
+      }
+
+      if (this.state === PromiseState.Rejected) {
+        try {
+          const newResult = onRejected(this.result);
+          if(newResult instanceof MyPromise) {
+            newResult.then(resolve, reject)
+          } else {
+          reject(newResult);
+          }
+        } catch(err) {
+          reject(err);
+        }
+      }
+    })
+
+  }
+    
+	catch = (onRejected) => {
+		return this.then(undefined, onRejected);
 	}
 }
 
 // write to window to use it in test file
-// window['MyPromise'] = MyPromise;
+window['MyPromise'] = MyPromise;
 
-// const promise = new MyPromise((resolve, reject) => {
-//   setTimeout(() => resolve("resolve first one"), 1000);
+// const promise = new MyPromise((resolve,reject) => {
+//   setTimeout(() => resolve("zopa"), 1000);
 // });
-// promise.myThen((res) => {
-//     console.log(res);
-//     return new MyPromise(resolve => {
-//         setTimeout(() => resolve("resolved second one"), 1000);
-//     });
-// }).myThen(res => {
-//     console.log(res);
+
+// promise.then(result => console.log(result));
+// promise.then(result => console.log(result));
+// promise.then(result => console.log(result));
+// promise.then(result => console.log(result));
+
+// const promise1 = new MyPromise((resolve, reject) => {
+//   setTimeout(() => resolve("zopa"), 1000);
+// });
+
+// setTimeout(() => {
+//   promise1.then(result => console.log(result));
+//   promise1.then(result => console.log(result));
+//   promise1.then(result => console.log(result));
+//   promise1.then(result => console.log(result));
+// }, 2000);
+
+// const promise2 = new MyPromise((resolve, reject) => {
+//   setTimeout(() => resolve("zopa"), 1000);
+// }).then((result) => {
+//   return result + "zopa";
+// }).then((result) => {
+//   return result + "zopa";
+// }).then((result) => {
+//   return result + "zopa";
+// }).then((result) => {
+//   console.log(result);
 // })
 
-// new MyPromise(function(resolve, reject) {
-
-//     setTimeout(() => resolve(1), 1000); // (*)
-  
-//   }).myThen(function(result) { // (**)
-  
-//     console.log(result); // 1
-//     return result * 2;
-  
-//   }).myThen(function(result) { // (***)
-  
-//     console.log(result); // 2
-//     return result * 2;
-  
-//   }).myThen(function(result) {
-  
-//     console.log(result); // 4
-//     return result * 2;
-  
+// const promise3 = new MyPromise((resolve, reject) => {
+//   setTimeout(() => resolve("zopa"), 1000);
+// }).then((result) => {
+//   return new MyPromise((resolve, reject) => {
+//     setTimeout(() => resolve(result + "zopa"), 2000);
 //   });
+// }).then((result) => {
+//   console.log(result);
+// })
