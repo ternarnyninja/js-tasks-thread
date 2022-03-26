@@ -10,9 +10,7 @@
 // 3. Опционаольно, желательно после 1 и 2:
 // исследовать как хендлит циклические ссылки метод JSON.stringify на mdn
 
-
-   
-let obj1 = {
+let obj = {
   first: {
       v1: "1", 
       v2: {
@@ -31,22 +29,32 @@ let obj1 = {
   }
 }
 
-obj1.first.obj = obj1;
+obj.first.obj = obj;
 
-const obj = {
-  first: '1',
-  seconds: '2',
-  third: false,
-  fourth: ['anytime', 2, 3, 4],
-  fifth: null
+const getCircularReplacer = () => {
+  const seen = new WeakSet();
+  return (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
 };
 
-const arr = ['1', '2', ['3']];
+const stringJson = JSON.stringify(obj, getCircularReplacer());
 
-// 1. 
+const parseJson = () => {
+  return JSON.parse(stringJson);
+}
 
-function getStringCount(obj) {
-  let cache = new WeakMap();
+const objWithOutCircularReference = parseJson(parseJson());
+
+const cache = new WeakMap();
+
+const getStringCount = (obj) => {
   if (typeof obj === "string") return 1;
   if (!obj) return 0;
   if (!cache.has(obj)) {
@@ -58,6 +66,5 @@ function getStringCount(obj) {
 
 // debugger;
 
-// let result = getStringCount(obj);
-
-// console.log(result);
+let res = getStringCount(objWithOutCircularReference);
+console.log(res);
