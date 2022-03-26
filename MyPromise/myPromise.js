@@ -4,6 +4,11 @@ const PromiseState = {
 	Rejected: 'REJECTED',
 }
 
+window.addEventListener("unhandledrejection", () => {
+  console.log(event.promise);
+  console.log(event.reason);
+})
+
 class MyPromise {
 	constructor(callback) {
 	  this.state = PromiseState.Pending;
@@ -38,34 +43,38 @@ class MyPromise {
 
 	// hmm...
   then = (onFulfilled, onRejected) => {
-    onFulfilled = typeof onFulfilled ===  "function" ? onFulfilled : value => value;
-    onRejected = typeof onFulfilled ===  "function" ? onRejected : error => {throw error};
+    // onFulfilled = typeof onFulfilled ===  "function" ? onFulfilled : value => value;
+    // onRejected = typeof onFulfilled ===  "function" ? onRejected : error => {throw error};
     return new MyPromise((resolve, reject) => {
       if (this.state === PromiseState.Pending) {
+        if (onFulfilled) {
           this.queueOnResolve.push(() => {
-            try {
-              const newResult = onFulfilled(this.result);
-              if(newResult instanceof MyPromise) {
-                newResult.then(resolve, reject)
-              } else {
-              resolve(newResult);
+              try {
+                const newResult = onFulfilled(this.result);
+                if(newResult instanceof MyPromise) {
+                  newResult.then(resolve, reject)
+                } else {
+                resolve(newResult);
+                }
+              } catch(err) {
+                reject(err);
               }
-            } catch(err) {
-              reject(err);
-            }
           });
+        }
+        if (onRejected) {
           this.queueOnResolve.push(() => {
-            try {
-              const newResult = onRejected(this.result);
-              if(newResult instanceof MyPromise) {
-                newResult.then(resolve, reject)
-              } else {
-              reject(newResult);
+              try {
+                const newResult = onRejected(this.result);
+                if(newResult instanceof MyPromise) {
+                  newResult.then(resolve, reject)
+                } else {
+                reject(newResult);
+                }
+              } catch(err) {
+                reject(err);
               }
-            } catch(err) {
-              reject(err);
-            }
           });
+        }
       }
 
       if (this.state === PromiseState.Resolved) {

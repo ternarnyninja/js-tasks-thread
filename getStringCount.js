@@ -1,71 +1,63 @@
-let obj = {
-    first: {
-        v1: "1", 
-        v2: {
-            second: "2"
-        },
-        v3: {
-            third: false,
-            v4: {
-                fourth: ["anytime", 2, 3, 4],
-            }
+// [Map, рекурсия, кеш]
+// Задача:
+// 1. оптимизировать функцию getStringCount из задач на методы массивов,
+// чтобы результат вычисления кешировался в WeakMap
+// 2. разобраться/загуглить что такое циклическая ссылка в объекте,
+// реализовать такой объект, разобраться почему без доработок getStringCount
+// при наличии циклической ссылки в объекте получаем нежелательное поведение
+// (переполнение стека вызовов), попробовать оптизимизровать решение чтобы захендлить 
+// это каким-либо образом и написать комментарий над функцией, как она работает с циклическими ссылками
+// 3. Опционаольно, желательно после 1 и 2:
+// исследовать как хендлит циклические ссылки метод JSON.stringify на mdn
 
-        },
-        v5: {
-            fifth: null,
-        }
-    }
-}
 
-obj.first.obj = obj; // цикличная ссылка которая ссылается на одно из своих свойств
+   
+let obj1 = {
+  first: {
+      v1: "1", 
+      v2: {
+          second: "2"
+      },
+      v3: {
+          third: false,
+          v4: {
+              fourth: ["anytime", 2, 3, 4],
+          }
 
-// Такой вариант пока вызывает сомнение
-// Перебирать объект и добавлять ему свойство-флаг, а затем удалять его
-
-function getValue(object) {
-  const handledFlag = '_propHandled_';
-  const properties = []; // ???
-
-  function getProperty(object) {
-    for(var prop in object) { // В случае с массивом не ок // лучше другой цикл
-      if (object[prop] === null) return 0;
-      if (typeof(object[prop]) === 'object') {
-      if (!object[prop][handledFlag]) {
-        Object.defineProperty(object[prop],handledFlag, {
-          value: true,
-          writable:false,
-          configurable: true
-        });
-          getProperty(object[prop]);
-        }
-          delete object[prop][handledFlag]
-        } else {
-        properties.push(object[prop]);
+      },
+      v5: {
+          fifth: null,
       }
-    }
   }
-  getProperty(object);
-
-  return properties;
 }
 
-// const arrProp = getValue(obj);
+obj1.first.obj = obj1;
 
-// На счет этого могу полагать, что ок
+const obj = {
+  first: '1',
+  seconds: '2',
+  third: false,
+  fourth: ['anytime', 2, 3, 4],
+  fifth: null
+};
 
-const cache = new Map();
-const cacheWeakMap = new WeakMap();
+const arr = ['1', '2', ['3']];
+
+// 1. 
 
 function getStringCount(obj) {
-  if(typeof obj === "string") return 1;
-  if(!obj) return 0;
-  if(!cache.has(obj)) {
-      const result = Object.values(obj).reduce((acc, cur) => acc + getStringCount(cur), 0);
-      
-      cache.set(obj, result);
-      cacheWeakMap.set(cache, result);
+  let cache = new WeakMap();
+  if (typeof obj === "string") return 1;
+  if (!obj) return 0;
+  if (!cache.has(obj)) {
+    const result = Object.values(obj).reduce((acc, cur) => acc + getStringCount(cur), 0);
+    cache.set(getStringCount, result);
   }
-  return cacheWeakMap.get(cache);
+  return cache.get(getStringCount);
 }
 
-// const result1 = getStringCount(arrProp);
+// debugger;
+
+// let result = getStringCount(obj);
+
+// console.log(result);
