@@ -10,58 +10,58 @@
 // 3. Опционаольно, желательно после 1 и 2:
 // исследовать как хендлит циклические ссылки метод JSON.stringify на mdn
 
+let cache = new WeakMap();
+
 function getStringCount(object, acc = {result: 0}) {
-  let cache = new WeakMap();
   const values = Object.values(object);
+  if(cache.has(object)) return 0;
   for(let i = 0;i < values.length;i++) {
     if (typeof values[i] === "string") {
       acc.result += 1;
-    } else if(typeof values[i] === "object" && values[i] !== null) {
-      getStringCount(values[i], acc);
+    }
+    if(typeof values[i] === "object" && values[i] !== null) {
+      getStringCount(values[i], acc)      
+      cache.set(object, acc.result);
     }
   }
-  return cache;
+  return acc.result;
 }
 
-// debugger;
+// let obj = {
+//   first: "1",
+//   second: "2",
+//   third: false,
+//   fourth: ["anytime", 2, 3, 4],
+//   fifth: null,
+// };
+
+// let result = getStringCount(obj);
+
+// console.log(result);
+// console.log(cache);
 
 let obj = {
-  first: "1",
-  second: "2",
-  third: false,
-  fourth: ["anytime", 2, 3, 4],
-  fifth: null,
-};
+  first: {
+      v1: "1", 
+      v2: {
+          second: "2"
+      },
+      v3: {
+          third: false,
+          v4: {
+              fourth: ["anytime", 2, 3, 4],
+          }
+
+      },
+      v5: {
+          fifth: null,
+      }
+  }
+}
+
+obj.first.obj = obj;
 
 let result = getStringCount(obj);
 
 console.log(result);
-
-console.log(result.has(obj));
-
-obj = null;
-
-console.log(result.has(obj));
-
-// let obj = {
-//   first: {
-//       v1: "1", 
-//       v2: {
-//           second: "2"
-//       },
-//       v3: {
-//           third: false,
-//           v4: {
-//               fourth: ["anytime", 2, 3, 4],
-//           }
-
-//       },
-//       v5: {
-//           fifth: null,
-//       }
-//   }
-// }
-
-// obj.first.obj = obj;
-
-// let result = getStringCount(obj);
+console.log(cache);
