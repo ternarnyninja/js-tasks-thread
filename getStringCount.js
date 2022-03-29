@@ -12,56 +12,38 @@
 
 let cache = new WeakMap();
 
-function getStringCount(object, acc = {result: 0}) {
+function getStringCount(object) {
+  let res = 0;
   const values = Object.values(object);
-  if(cache.has(object)) return 0;
-  for(let i = 0;i < values.length;i++) {
-    if (typeof values[i] === "string") {
-      acc.result += 1;
-    }
-    if(typeof values[i] === "object" && values[i] !== null) {
-      getStringCount(values[i], acc)      
-      cache.set(object, acc.result);
+  if (cache.has(object)) return 0;
+  for (let i = 0;i < values.length;i++) {
+    if (typeof values[i] === "string") res += 1;
+    if (typeof values[i] === "object" && values[i] !== null) {
+      res += getStringCount(values[i]);
+      cache.set(object, res);
     }
   }
-  return acc.result;
+
+  return res;
 }
 
-// let obj = {
-//   first: "1",
-//   second: "2",
-//   third: false,
-//   fourth: ["anytime", 2, 3, 4],
-//   fifth: null,
-// };
-
-// let result = getStringCount(obj);
-
-// console.log(result);
-// console.log(cache);
+// debugger;
 
 let obj = {
-  first: {
-      v1: "1", 
-      v2: {
-          second: "2"
-      },
-      v3: {
-          third: false,
-          v4: {
-              fourth: ["anytime", 2, 3, 4],
-          }
+  first: "1",
+  second: "2",
+  third: false,
+  fourth: ["anytime", 2, 3, 4],
+  fifth: null,
+};
 
-      },
-      v5: {
-          fifth: null,
-      }
-  }
-}
+obj.obj = obj;
 
-obj.first.obj = obj;
+// console.log(JSON.stringify(obj));
 
 let result = getStringCount(obj);
 
 console.log(result);
 console.log(cache);
+
+
