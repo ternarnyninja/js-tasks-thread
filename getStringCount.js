@@ -15,16 +15,20 @@ let cache = new WeakMap();
 function getStringCount(object) {
   let res = 0;
   const values = Object.values(object);
-  if (cache.has(object)) return 0;
-  for (let i = 0;i < values.length;i++) {
-    if (typeof values[i] === "string") res += 1;
-    if (typeof values[i] === "object" && values[i] !== null) {
-      res += getStringCount(values[i]);
-      cache.set(object, res);
+  if (!cache.has(object)) {
+    for (let i = 0;i < values.length;i++) {
+      if (typeof values[i] === "string") res += 1;
+      if (typeof values[i] === "object" && values[i] !== null) {
+        if (cache.has(values[i])) {
+          return 0;
+        }
+        res += getStringCount(values[i]);
+      }
     }
+    cache.set(object, res);
   }
 
-  return res;
+  return cache.get(object);
 }
 
 // debugger;
@@ -39,11 +43,10 @@ let obj = {
 
 obj.obj = obj;
 
-// console.log(JSON.stringify(obj));
-
 let result = getStringCount(obj);
 
 console.log(result);
 console.log(cache);
 
+// console.log(JSON.stringify(result));
 
