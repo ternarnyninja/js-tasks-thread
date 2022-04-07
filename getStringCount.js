@@ -16,12 +16,11 @@ function getStringCount(object) {
   let res = 0;
   const values = Object.values(object);
   if (!cache.has(object)) {
+    cache.set(object, 0);
     for (let i = 0;i < values.length;i++) {
       if (typeof values[i] === "string") res += 1;
       if (typeof values[i] === "object" && values[i] !== null) {
-        if (cache.has(values[i])) {
-          return 0;
-        }
+        if (cache.has(values[i])) continue;
         res += getStringCount(values[i]);
       }
     }
@@ -31,13 +30,12 @@ function getStringCount(object) {
   return cache.get(object);
 }
 
-// debugger;
+// // debugger;
 
 let obj = {
   first: "1",
   second: "2",
   third: false,
-  fourth: ["anytime", 2, 3, 4],
   fifth: null,
 };
 
@@ -46,7 +44,3 @@ obj.obj = obj;
 let result = getStringCount(obj);
 
 console.log(result);
-console.log(cache);
-
-// console.log(JSON.stringify(result));
-
